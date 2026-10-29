@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI-Based Voice Command Recognition for Assistive Robotic Systems</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Header / Navigation -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-badge">RESEARCH PROTOTYPE</div>
+        <h1 class="brand-title">AI-Based Voice Command Recognition for Assistive Robotic Systems</h1>
+        <p class="brand-subtitle">Simulated Autonomous Healthcare Assistant &bull; Explainable NLP Intent Classification &bull; Collision Avoidance</p>
+      </div>
+
+      <div class="header-actions">
+        <button id="btnRunDemo" class="btn btn-primary" title="Launch guided automated demonstration">
+          <span class="icon">▶</span> One-Click Demonstration
+        </button>
+        <button id="btnResetSim" class="btn btn-secondary" title="Reset robot to Home Base">
+          <span class="icon">↺</span> Reset Simulation
+        </button>
+        <button id="btnMuteAudio" class="btn btn-secondary" title="Toggle voice announcements">
+          🔊 Audio: On
+        </button>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="tab-nav">
+      <button class="tab-btn active" data-tab="tab-simulation">🎮 Simulation Dashboard</button>
+      <button class="tab-btn" data-tab="tab-architecture">🏛 System Architecture & Workflow</button>
+      <button class="tab-btn" data-tab="tab-benchmark">📊 Research Benchmark & Testing</button>
+      <button class="tab-btn" data-tab="tab-dictionary">📖 Voice Command Dictionary</button>
+    </nav>
+  </header>
+
+  <!-- Live Demonstration Progress Banner (Shown during 1-click Demo) -->
+  <div id="demoBanner" class="demo-banner" style="display: none;">
+    <div class="demo-banner-content">
+      <span class="demo-tag">LIVE DEMO MODE</span>
+      <strong id="demoStepTitle">Step Title</strong>:
+      <span id="demoStepDesc">Step description narrative here...</span>
+    </div>
+  </div>
+
+  <!-- Voice Error Alert Banner -->
+  <div id="voiceAlertBanner" class="alert-banner" style="display: none;"></div>
+
+  <!-- MAIN TAB CONTENT CONTAINER -->
+  <main class="main-content">
+
+    <!-- ========================================== -->
+    <!-- TAB 1: SIMULATION DASHBOARD -->
+    <!-- ========================================== -->
+    <section id="tab-simulation" class="tab-content active">
+      <div class="dashboard-grid">
+
+        <!-- LEFT COLUMN: Canvas Simulation + Canvas Controls -->
+        <div class="sim-column">
+          <div class="card sim-card">
+            <div class="card-header">
+              <div class="header-left">
+                <span class="status-indicator live"></span>
+                <h2 class="card-title">Simulated Healthcare Environment (960 &times; 600)</h2>
+              </div>
+              <div class="canvas-toggles">
+                <label class="toggle-control" title="Toggle 360-degree LIDAR Rays">
+                  <input type="checkbox" id="toggleLidar" checked>
+                  <span class="toggle-slider"></span>
+                  LIDAR Rays
+                </label>
+                <label class="toggle-control" title="Toggle A* Path Trajectory">
+                  <input type="checkbox" id="togglePath" checked>
+                  <span class="toggle-slider"></span>
+                  A* Path
+                </label>
+                <label class="toggle-control" title="Toggle Floor Grid">
+                  <input type="checkbox" id="toggleGrid" checked>
+                  <span class="toggle-slider"></span>
+                  Grid
+                </label>
+              </div>
+            </div>
+
+            <!-- 2D Canvas Viewport -->
+            <div class="canvas-viewport">
+              <canvas id="simCanvas" width="960" height="600"></canvas>
+            </div>
+
+            <!-- Live Telemetry HUD Bar under Canvas -->
+            <div class="telemetry-bar">
+              <div class="hud-item">
+                <span class="hud-label">COORDINATES</span>
+                <span id="hudPos" class="hud-value font-mono">X: 120 px, Y: 120 px</span>
+              </div>
+              <div class="hud-item">
+                <span class="hud-label">HEADING</span>
+                <span id="hudHeading" class="hud-value font-mono">0°</span>
+              </div>
+              <div class="hud-item">
+                <span class="hud-label">VELOCITY</span>
+                <span id="hudSpeed" class="hud-value font-mono">0.0 px/f</span>
+              </div>
+              <div class="hud-item battery-hud">
+                <span class="hud-label">BATTERY</span>
+                <div class="battery-wrapper">
+                  <div class="battery-bar-bg">
+                    <div id="hudBatteryBar" class="battery-fill green" style="width: 88%;"></div>
+                  </div>
+                  <span id="hudBattery" class="hud-value font-mono">88%</span>
+                </div>
+              </div>
+              <div class="hud-item">
+                <span class="hud-label">ROBOT STATE</span>
+                <span id="hudState" class="state-badge idle">IDLE</span>
+              </div>
+              <div class="hud-item">
+                <span class="hud-label">LIDAR CLEARANCE</span>
+                <div class="lidar-val-group">
+                  <span id="hudLidarDist" class="hud-value font-mono">140 px</span>
+                  <span id="hudObstacleAlert" class="obstacle-alert" style="display: none;">⚠️ OBSTACLE</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Active Task Bar -->
+            <div class="active-task-bar">
+              <span class="task-label">CURRENT TASK:</span>
+              <span id="hudTask" class="task-desc">System Standby - Ready for Voice Command</span>
+              <div id="hudCargo" class="task-cargo"><span class="cargo-empty">Cargo Bay: Empty</span></div>
+            </div>
+          </div>
+
+          <!-- Quick Interactive Sample Commands -->
+          <div class="card sample-card">
+            <div class="sample-title">
+              <span>💡 Quick Sample Commands (Click to Test Instantly):</span>
+            </div>
+            <div class="sample-chips-row">
+              <button class="sample-chip" data-cmd="Move forward">“Move forward”</button>
+              <button class="sample-chip" data-cmd="Move backward">“Move backward”</button>
+              <button class="sample-chip" data-cmd="Turn left">“Turn left”</button>
+              <button class="sample-chip" data-cmd="Turn right">“Turn right”</button>
+              <button class="sample-chip" data-cmd="Bring medicine">“Bring medicine”</button>
+              <button class="sample-chip" data-cmd="Move to the patient">“Move to the patient”</button>
+              <button class="sample-chip" data-cmd="Help me">“Help me”</button>
+              <button class="sample-chip" data-cmd="Go to the charging station">“Go to the charging station”</button>
+              <button class="sample-chip danger" data-cmd="Stop">“Stop”</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Voice Control + AI Processing + Manual D-Pad + History -->
+        <div class="control-column">
+
+          <!-- VOICE COMMAND RECOGNITION PANEL -->
+          <div class="card voice-control-card">
+            <div class="card-header">
+              <h2 class="card-title">🎙️ Voice Command Input</h2>
+              <span id="voiceStatusPill" class="status-pill standby">STANDBY</span>
+            </div>
+
+            <div class="voice-interaction-area">
+              <div class="mic-cluster">
+                <button id="micButton" class="mic-btn" title="Click to Speak Voice Command">
+                  <div class="mic-icon-wrapper">
+                    <svg class="mic-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                      <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                      <line x1="12" y1="19" x2="12" y2="23"></line>
+                      <line x1="8" y1="23" x2="16" y2="23"></line>
+                    </svg>
+                  </div>
+                  <div class="mic-pulse-ring"></div>
+                </button>
+                <div class="mic-prompt">Click to Speak or Dictate</div>
+              </div>
+
+              <!-- Audio Wave Visualizer Canvas -->
+              <div class="visualizer-container">
+                <canvas id="audioVisualizer" width="160" height="36"></canvas>
+                <div id="voiceStatusMessage" class="voice-status-note">Microphone Standby. Press to speak or enter text below.</div>
+              </div>
+            </div>
+
+            <!-- Live Raw Transcript Preview -->
+            <div class="transcript-box">
+              <span class="transcript-label">Recognized Transcript:</span>
+              <span id="rawTranscriptText" class="transcript-text">"Awaiting speech..."</span>
+            </div>
+
+            <!-- Fallback Text Command Input -->
+            <form id="textCommandForm" class="text-cmd-form">
+              <input type="text" id="textCommandInput" placeholder="Or type command: 'Bring medicine', 'Turn left'..." autocomplete="off">
+              <button type="submit" class="btn btn-primary">Execute</button>
+            </form>
+          </div>
+
+          <!-- AI COMMAND PROCESSING PANEL -->
+          <div class="card ai-processing-card">
+            <div class="card-header">
+              <h2 class="card-title">🧠 AI Command Processing & Intent Matching</h2>
+              <span id="aiExecutionStatus" class="status-tag waiting">WAITING</span>
+            </div>
+
+            <div class="ai-metrics-grid">
+              <div class="ai-metric-item">
+                <span class="metric-label">RAW INPUT</span>
+                <span id="aiRawInput" class="metric-value font-mono">None</span>
+              </div>
+              <div class="ai-metric-item">
+                <span class="metric-label">RECOGNIZED COMMAND</span>
+                <span id="aiRecognizedCmd" class="metric-value">None</span>
+              </div>
+              <div class="ai-metric-item">
+                <span class="metric-label">DETECTED INTENT</span>
+                <span id="aiDetectedIntent" class="metric-value highlight">None</span>
+              </div>
+              <div class="ai-metric-item">
+                <span class="metric-label">SELECTED ACTION</span>
+                <span id="aiSelectedAction" class="metric-value font-mono">None</span>
+              </div>
+            </div>
+
+            <!-- Confidence Score Bar -->
+            <div class="confidence-section">
+              <div class="confidence-header">
+                <span class="metric-label">INTENT CONFIDENCE SCORE</span>
+                <span id="aiConfidenceValue" class="confidence-val font-mono">0%</span>
+              </div>
+              <div class="confidence-bar-bg">
+                <div id="aiConfidenceBar" class="confidence-fill low" style="width: 0%;"></div>
+              </div>
+            </div>
+
+            <!-- Explainable NLP Breakdown -->
+            <div class="explainability-box">
+              <div class="explain-item">
+                <span class="explain-label">Decision Rule:</span>
+                <span id="aiDecisionRule" class="explain-text">System waiting for user voice or text instruction.</span>
+              </div>
+              <div class="explain-item">
+                <span class="explain-label">Matched Keywords:</span>
+                <div id="aiMatchedTokens" class="tokens-container"><span class="text-muted">None</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MANUAL CONTROLS & D-PAD -->
+          <div class="card manual-card">
+            <div class="card-header">
+              <h2 class="card-title">🕹️ Manual Robot Teleoperation</h2>
+              <span class="keyboard-hint">Keys: W / A / S / D &bull; Space = Stop</span>
+            </div>
+
+            <div class="dpad-container">
+              <div class="dpad-grid">
+                <div></div>
+                <button id="btnDriveForward" class="dpad-btn" title="Drive Forward (W)">▲<br><small>Forward</small></button>
+                <div></div>
+
+                <button id="btnTurnLeft" class="dpad-btn" title="Turn Left (A)">◄<br><small>Left</small></button>
+                <button id="btnEmergencyStop" class="dpad-btn stop-btn" title="Emergency Stop (Space)">■<br><small>STOP</small></button>
+                <button id="btnTurnRight" class="dpad-btn" title="Turn Right (D)">►<br><small>Right</small></button>
+
+                <div></div>
+                <button id="btnDriveBackward" class="dpad-btn" title="Drive Backward (S)">▼<br><small>Reverse</small></button>
+                <div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- COMMAND EXECUTION HISTORY -->
+          <div class="card history-card">
+            <div class="card-header">
+              <h2 class="card-title">📜 Command History Log</h2>
+            </div>
+            <div id="commandHistoryList" class="history-list">
+              <div class="empty-history">No voice or text commands executed yet.</div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 2: SYSTEM ARCHITECTURE & WORKFLOW -->
+    <!-- ========================================== -->
+    <section id="tab-architecture" class="tab-content">
+      <div class="card architecture-card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Assistive Robotic System Architecture &amp; Signal Pipeline</h2>
+            <p class="card-desc">End-to-end dataflow from acoustic voice input to 2D kinematic execution and sensor feedback.</p>
+          </div>
+        </div>
+
+        <!-- Visual Architecture Flow Diagram -->
+        <div class="architecture-diagram">
+          <div class="arch-stage">
+            <div class="stage-number">01</div>
+            <div class="stage-icon">🎙️</div>
+            <h3 class="stage-title">Acoustic Input</h3>
+            <p class="stage-desc">Microphone audio capture via Web Audio / Web Speech API streaming at 16kHz PCM.</p>
+            <div class="stage-meta">Browser Web Speech API</div>
+          </div>
+
+          <div class="arch-arrow">➔</div>
+
+          <div class="arch-stage">
+            <div class="stage-number">02</div>
+            <div class="stage-icon">📝</div>
+            <h3 class="stage-title">Speech-to-Text</h3>
+            <p class="stage-desc">Acoustic modeling and phonetic transcription to normalize user speech into text string.</p>
+            <div class="stage-meta">Interim &amp; Final Transcripts</div>
+          </div>
+
+          <div class="arch-arrow">➔</div>
+
+          <div class="arch-stage highlight">
+            <div class="stage-number">03</div>
+            <div class="stage-icon">🧠</div>
+            <h3 class="stage-title">Explainable NLP Engine</h3>
+            <p class="stage-desc">Tokenization, medical synonym mapping, Levenshtein distance, and Jaccard keyword scoring.</p>
+            <div class="stage-meta">Transparent Intent Matcher</div>
+          </div>
+
+          <div class="arch-arrow">➔</div>
+
+          <div class="arch-stage">
+            <div class="stage-number">04</div>
+            <div class="stage-icon">🛡️</div>
+            <h3 class="stage-title">Safety &amp; Action Dispatch</h3>
+            <p class="stage-desc">Ambiguity gate verifies confidence &ge; 55%. Validates collision risks and triggers mission.</p>
+            <div class="stage-meta">State Machine Dispatcher</div>
+          </div>
+
+          <div class="arch-arrow">➔</div>
+
+          <div class="arch-stage">
+            <div class="stage-number">05</div>
+            <div class="stage-icon">🧭</div>
+            <h3 class="stage-title">A* Planner &amp; Kinematics</h3>
+            <p class="stage-desc">Computes collision-free trajectory waypoints around walls and obstacles using Pure Pursuit.</p>
+            <div class="stage-meta">Differential Drive Controller</div>
+          </div>
+
+          <div class="arch-arrow">➔</div>
+
+          <div class="arch-stage">
+            <div class="stage-number">06</div>
+            <div class="stage-icon">📡</div>
+            <h3 class="stage-title">LIDAR &amp; Audio Feedback</h3>
+            <p class="stage-desc">360° laser sweep collision avoidance, visual telemetry updates, and spoken audio responses.</p>
+            <div class="stage-meta">Canvas 2D + Speech Synthesis</div>
+          </div>
+        </div>
+
+        <!-- Technical Modules Documentation -->
+        <div class="architecture-specs-grid">
+          <div class="spec-card">
+            <h3>Explainable NLP &amp; Intent Matching</h3>
+            <p>Rather than an opaque black box, the system employs transparent multi-metric classification combining canonical phrase Levenshtein similarity (45%), keyword anchor coverage (40%), and Jaccard token overlap (15%). If confidence is below the safety threshold, execution is halted and clarification requested.</p>
+          </div>
+          <div class="spec-card">
+            <h3>Autonomous Path Planning (A*)</h3>
+            <p>The 960&times;600 canvas is discretized into a 48&times;30 occupancy grid with a 26px obstacle inflation zone matching the robot's physical radius. 8-directional search generates optimal, corner-safe trajectories smoothed via line-of-sight raycasting.</p>
+          </div>
+          <div class="spec-card">
+            <h3>Simulated 360° LIDAR Sensor</h3>
+            <p>Casts 36 laser rays in real-time across the environment. Intersections against perimeter boundaries and furniture calculate clearances. The forward &plusmn;35° safety cone triggers automatic braking if obstacles breach 35px proximity.</p>
+          </div>
+          <div class="spec-card">
+            <h3>Assistive Healthcare Missions</h3>
+            <p>Supports multi-stage tasks including Patient Assistance (direct bedside transit), Pharmacy Medicine Delivery (two-leg route: dock &rarr; pharmacy pickup &rarr; patient bedside handover), and Autonomous Docking (inductive recharging bay).</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 3: RESEARCH BENCHMARK & TESTING -->
+    <!-- ========================================== -->
+    <section id="tab-benchmark" class="tab-content">
+      <div class="card benchmark-card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Automated Research Testing &amp; Empirical Benchmark</h2>
+            <p class="card-desc">Quantitative evaluation across predefined assistive robotics test cases for research paper presentation.</p>
+          </div>
+          <button id="btnRunAllTests" class="btn btn-primary">
+            ▶ Run Automated Research Tests
+          </button>
+        </div>
+
+        <div id="testProgressText" class="test-progress-info">
+          Click "Run Automated Research Tests" to execute all 7 test cases in real-time.
+        </div>
+
+        <!-- Test Results Benchmark Table -->
+        <div class="table-responsive">
+          <table class="benchmark-table">
+            <thead>
+              <tr>
+                <th>Test ID</th>
+                <th>Test Case Name</th>
+                <th>Input Voice Command</th>
+                <th>Target Intent</th>
+                <th>Confidence</th>
+                <th>Latency</th>
+                <th>Research Status</th>
+              </tr>
+            </thead>
+            <tbody id="testResultsTableBody">
+              <tr>
+                <td><strong>TC-01</strong></td>
+                <td>Directional Forward Translation</td>
+                <td><code>"Move forward"</code></td>
+                <td>MOVE_FORWARD</td>
+                <td><span class="confidence-badge">--</span></td>
+                <td>--</td>
+                <td><span class="test-badge ready">READY</span></td>
+              </tr>
+              <tr>
+                <td><strong>TC-02</strong></td>
+                <td>Directional Backward Reversal</td>
+                <td><code>"Move backward"</code></td>
+                <td>MOVE_BACKWARD</td>
+                <td><span class="confidence-badge">--</span></td>
+                <td>--</td>
+                <td><span class="test-badge ready">READY</span></td>
+              </tr>
+              <tr>
+                <td><strong>TC-03</strong></td>
+                <td>Angular Steering: Turn Left</td>
+                <td><code>"Turn left"</code></td>
+                <td>TURN_LEFT</td>
+                <td><span class="confidence-badge">--</span></td>
+                <td>--</td>
+                <td><span class="test-badge ready">READY</span></td>
+              </tr>
+              <tr>
+                <td><strong>TC-04</strong></td>
+                <td>Angular Steering: Turn Right</td>
+                <td><code>"Turn right"</code></td>
+                <td>TURN_RIGHT</td>
+                <td><span class="confidence-badge">--</span></td>
+                <td>--</td>
+                <td><span class="test-badge ready">READY</span></td>
+              </tr>
+              <tr>
+                <td><strong>TC-05</strong></td>
+                <td>Emergency Safety Braking</td>
+                <td><code>"Stop"</code></td>
+                <td>STOP</td>
+                <td><span class="confidence-badge">--</span></td>
+                <td>--</td>
+                <td><span class="test-badge ready">READY</span></td>
+              </tr>
+              <tr>
+                <td><strong>TC-06</strong></td>
+                <td>Autonomous Patient Assistance</td>
+                <td><code>"Move to the patient"</code></td>
+                <td>NAVIGATE_PATIENT</td>
+                <td><span class="confidence-badge">--</span></td>
+                <td>--</td>
+                <td><span class="test-badge ready">READY</span></td>
+              </tr>
+              <tr>
+                <td><strong>TC-07</strong></td>
+                <td>Multi-Phase Medicine Delivery</td>
+                <td><code>"Bring medicine"</code></td>
+                <td>DELIVER_MEDICINE</td>
+                <td><span class="confidence-badge">--</span></td>
+                <td>--</td>
+                <td><span class="test-badge ready">READY</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 4: VOICE COMMAND DICTIONARY -->
+    <!-- ========================================== -->
+    <section id="tab-dictionary" class="tab-content">
+      <div class="card dictionary-card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Supported Voice Command Lexicon &amp; Grammar</h2>
+            <p class="card-desc">Canonical voice commands, natural language variations, and associated robot actions recognized by the system.</p>
+          </div>
+        </div>
+
+        <div class="lexicon-grid">
+          <div class="lexicon-item">
+            <div class="lexicon-header">
+              <span class="lexicon-title">Move Forward</span>
+              <span class="lexicon-action">MOVE_FORWARD</span>
+            </div>
+            <p class="lexicon-desc">Drives the assistive robot forward along its current heading.</p>
+            <div class="lexicon-variations">
+              <span class="var-tag">“Move forward”</span>
+              <span class="var-tag">“Go forward”</span>
+              <span class="var-tag">“Go ahead”</span>
+              <span class="var-tag">“Move ahead”</span>
+              <span class="var-tag">“Advance”</span>
+              <span class="var-tag">“Drive front”</span>
+            </div>
+          </div>
+
+          <div class="lexicon-item">
+            <div class="lexicon-header">
+              <span class="lexicon-title">Move Backward</span>
+              <span class="lexicon-action">MOVE_BACKWARD</span>
+            </div>
+            <p class="lexicon-desc">Reverses the assistive robot backward.</p>
+            <div class="lexicon-variations">
+              <span class="var-tag">“Move backward”</span>
+              <span class="var-tag">“Go backward”</span>
+              <span class="var-tag">“Reverse”</span>
+              <span class="var-tag">“Go back”</span>
+              <span class="var-tag">“Retreat”</span>
+            </div>
+          </div>
+
+          <div class="lexicon-item">
+            <div class="lexicon-header">
+              <span class="lexicon-title">Turn Left</span>
+              <span class="lexicon-action">TURN_LEFT</span>
+            </div>
+            <p class="lexicon-desc">Rotates robot counter-clockwise (45-90 degrees).</p>
+            <div class="lexicon-variations">
+              <span class="var-tag">“Turn left”</span>
+              <span class="var-tag">“Rotate left”</span>
+              <span class="var-tag">“Spin left”</span>
+              <span class="var-tag">“Go left”</span>
+            </div>
+          </div>
+
+          <div class="lexicon-item">
+            <div class="lexicon-header">
+              <span class="lexicon-title">Turn Right</span>
+              <span class="lexicon-action">TURN_RIGHT</span>
+            </div>
+            <p class="lexicon-desc">Rotates robot clockwise (45-90 degrees).</p>
+            <div class="lexicon-variations">
+              <span class="var-tag">“Turn right”</span>
+              <span class="var-tag">“Rotate right”</span>
+              <span class="var-tag">“Spin right”</span>
+              <span class="var-tag">“Go right”</span>
+            </div>
+          </div>
+
+          <div class="lexicon-item danger">
+            <div class="lexicon-header">
+              <span class="lexicon-title">Stop / Emergency Halt</span>
+              <span class="lexicon-action">STOP</span>
+            </div>
+            <p class="lexicon-desc">Instantly brakes all motors and halts active navigation missions.</p>
+            <div class="lexicon-variations">
+              <span class="var-tag">“Stop”</span>
+              <span class="var-tag">“Please stop”</span>
+              <span class="var-tag">“Emergency stop”</span>
+              <span class="var-tag">“Halt”</span>
+              <span class="var-tag">“Freeze”</span>
+              <span class="var-tag">“Brake”</span>
+            </div>
+          </div>
+
+          <div class="lexicon-item">
+            <div class="lexicon-header">
+              <span class="lexicon-title">Move to the Patient</span>
+              <span class="lexicon-action">NAVIGATE_PATIENT</span>
+            </div>
+            <p class="lexicon-desc">Navigates autonomously around walls to the patient bedside ward.</p>
+            <div class="lexicon-variations">
+              <span class="var-tag">“Move to the patient”</span>
+              <span class="var-tag">“Go to patient”</span>
+              <span class="var-tag">“Assist patient”</span>
+              <span class="var-tag">“Visit patient”</span>
+              <span class="var-tag">“Go to bed”</span>
+            </div>
+          </div>
+
+          <div class="lexicon-item">
+            <div class="lexicon-header">
+              <span class="lexicon-title">Bring Medicine</span>
+              <span class="lexicon-action">DELIVER_MEDICINE</span>
+            </div>
+            <p class="lexicon-desc">Two-leg mission: Fetches prescription medication from pharmacy and delivers to patient.</p>
+            <div class="lexicon-variations">
+              <span class="var-tag">“Bring medicine”</span>
+              <span class="var-tag">“Get medicine”</span>
+              <span class="var-tag">“Fetch medicine”</span>
+              <span class="var-tag">“Deliver pills”</span>
+              <span class="var-tag">“Bring medication”</span>
+            </div>
+          </div>
+
+          <div class="lexicon-item">
+            <div class="lexicon-header">
+              <span class="lexicon-title">Emergency Assistance</span>
+              <span class="lexicon-action">HELP_EMERGENCY</span>
+            </div>
+            <p class="lexicon-desc">High-priority emergency dispatch directly to patient with audible alert.</p>
+            <div class="lexicon-variations">
+              <span class="var-tag">“Help me”</span>
+              <span class="var-tag">“Emergency”</span>
+              <span class="var-tag">“I need help”</span>
+              <span class="var-tag">“SOS”</span>
+              <span class="var-tag">“Urgent help”</span>
+            </div>
+          </div>
+
+          <div class="lexicon-item">
+            <div class="lexicon-header">
+              <span class="lexicon-title">Go to Charging Station</span>
+              <span class="lexicon-action">NAVIGATE_CHARGING</span>
+            </div>
+            <p class="lexicon-desc">Navigates to recharging dock, connects, and replenishes battery to 100%.</p>
+            <div class="lexicon-variations">
+              <span class="var-tag">“Go to the charging station”</span>
+              <span class="var-tag">“Recharge”</span>
+              <span class="var-tag">“Dock”</span>
+              <span class="var-tag">“Charge battery”</span>
+            </div>
+          </div>
+
+          <div class="lexicon-item">
+            <div class="lexicon-header">
+              <span class="lexicon-title">Return to Base</span>
+              <span class="lexicon-action">NAVIGATE_HOME</span>
+            </div>
+            <p class="lexicon-desc">Navigates back to Home Base starting pad and enters standby mode.</p>
+            <div class="lexicon-variations">
+              <span class="var-tag">“Go home”</span>
+              <span class="var-tag">“Return to base”</span>
+              <span class="var-tag">“Return to start”</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <div class="footer-container">
+      <div>
+        <strong>College Engineering Research Project:</strong> AI-Based Voice Command Recognition for Assistive Robotic Systems
+      </div>
+      <div>
+        Browser-Supported Software Simulation &bull; Pure Web Speech API &amp; Canvas 2D &bull; Zero Paid API Dependencies
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/nlp.js"></script>
+  <script src="js/pathfinding.js"></script>
+  <script src="js/sensors.js"></script>
+  <script src="js/robot.js"></script>
+  <script src="js/environment.js"></script>
+  <script src="js/speech.js"></script>
+  <script src="js/test_suite.js"></script>
+  <script src="js/demo_controller.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
